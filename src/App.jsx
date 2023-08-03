@@ -1,35 +1,50 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React from 'react';
+import { useEffect } from 'react';
+import { useState } from 'react';
+import { Block } from './Block';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [toCurrency, setToCurrency] = useState("usd");
+  const [fromCurrency, setFromCurrency] = useState("kzt");
+  const [fromPrice, setFromPrice] = useState(0);
+  const [toPrice, setToPrice] = useState(0);
 
+
+  const [rates, setRates] = useState({});
+  useEffect(()=>{
+    fetch("https://www.floatrates.com/daily/usd.json").then(res=>res.json()).then(json=>{
+      setRates(json);
+      setRates((prev)=>({
+        ...prev,
+        "usd": {
+          "rate" : 1,
+          "inverseRate" : 1
+        }
+      }))
+    }).catch(err=>{
+      console.warn(err);
+      alert("DB error");
+    })
+  },[]);
+
+  
+
+  const onChangeFromPrice = (value) =>{
+    const price = (value / rates[fromCurrency].rate) * rates[toCurrency].rate;
+    setFromPrice(value);
+    setToPrice(price);
+  }
+  const onChangeToPrice = (value) =>{
+    const price = (value / rates[fromCurrency].inverseRate) * rates[toCurrency].inverseRate;
+    setToPrice(value);
+    setFromPrice(price);
+  } 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="App">
+      <Block value={fromPrice} currency={fromCurrency} onChangeCurrency={setFromCurrency} onChangeValue={onChangeFromPrice} />
+      <Block value={toPrice} currency={toCurrency} onChangeCurrency={setToCurrency} onChangeValue={onChangeToPrice}/>
+    </div>
+  );
 }
 
-export default App
+export default App;
